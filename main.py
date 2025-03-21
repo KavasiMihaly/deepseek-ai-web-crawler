@@ -63,7 +63,7 @@ async def crawl_venues():
 
     # Save the collected venues to a CSV file
     if all_venues:
-        save_venues_to_csv(all_venues, "complete_venues_ca.csv")
+        save_venues_to_csv(all_venues, "complete_venues_ca_ol.csv")
         print(f"Saved {len(all_venues)} venues to 'complete_venues.csv'.")
     else:
         print("No venues were found during the crawl.")

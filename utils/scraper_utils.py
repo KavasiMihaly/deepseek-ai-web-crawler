@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, Literal
 
 from crawl4ai import (
     AsyncWebCrawler,
@@ -29,27 +29,49 @@ def get_browser_config() -> BrowserConfig:
     )
 
 
-def get_llm_strategy() -> LLMExtractionStrategy:
+def get_llm_strategy(provider_type: Literal["groq", "ollama"] = None) -> LLMExtractionStrategy:
     """
     Returns the configuration for the language model extraction strategy.
-
+    
+    Args:
+        provider_type: The LLM provider to use. If None, uses the value from LLM_PROVIDER env var.
+    
     Returns:
         LLMExtractionStrategy: The settings for how to extract data using LLM.
     """
-    # https://docs.crawl4ai.com/api/strategies/#llmextractionstrategy
-    return LLMExtractionStrategy(
-        provider="groq/deepseek-r1-distill-llama-70b",  # Name of the LLM provider
-        api_token=os.getenv("GROQ_API_KEY"),  # API token for authentication
-        schema=Venue.model_json_schema(),  # JSON schema of the data model
-        extraction_type="schema",  # Type of extraction to perform
-        instruction=(
-            "Extract all venue objects with 'name', 'location', 'price', 'capacity', "
+    # Determine which provider to use
+    if provider_type is None:
+        provider_type = os.getenv("LLM_PROVIDER", "groq").lower()
+    
+    # Common configuration settings
+    common_config = {
+        "schema": Venue.model_json_schema(),  # JSON schema of the data model
+        "extraction_type": "schema",  # Type of extraction to perform
+        "instruction": (
+            "Extract all venue objects from the Sponsored result with 'name', 'location', 'price', 'capacity', "
             "'rating', 'reviews', and a 1 sentence description of the venue from the "
-            "following content."
+            "following content. The Other Venues section should be ignored."
         ),  # Instructions for the LLM
-        input_format="markdown",  # Format of the input content
-        verbose=True,  # Enable verbose logging
-    )
+        "input_format": "markdown",  # Format of the input content
+        "verbose": True,  # Enable verbose logging
+    }
+    
+    # Provider-specific configurations
+    if provider_type == "ollama":
+        model_name = os.getenv("OLLAMA_MODEL", "deepseek-r1:7b")
+
+        return LLMExtractionStrategy(
+            provider=f"ollama/{model_name}",
+            ##model=os.getenv("OLLAMA_MODEL", "llama3"),
+            base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+            **common_config
+        )
+    else:  # Default to groq
+        return LLMExtractionStrategy(
+            provider="groq/deepseek-r1-distill-llama-70b",
+            api_token=os.getenv("GROQ_API_KEY"),
+            **common_config
+        )
 
 
 async def check_no_results(
