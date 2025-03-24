@@ -10,7 +10,7 @@ from crawl4ai import (
     LLMExtractionStrategy,
 )
 
-from models.venue import Venue
+from models.EC import EC
 from utils.data_utils import is_complete_venue, is_duplicate_venue
 
 
@@ -45,12 +45,12 @@ def get_llm_strategy(provider_type: Literal["groq", "ollama"] = None) -> LLMExtr
     
     # Common configuration settings
     common_config = {
-        "schema": Venue.model_json_schema(),  # JSON schema of the data model
+        "schema": EC.model_json_schema(),  # JSON schema of the data model
         "extraction_type": "schema",  # Type of extraction to perform
         "instruction": (
-            "Extract all venue objects from the Sponsored result with 'name', 'location', 'price', 'capacity', "
-            "'rating', 'reviews', and a 1 sentence description of the venue from the "
-            "following content. The Other Venues section should be ignored."
+            "From the energy certificate page extract the following information 'address', 'energy rating', 'potential energy rating', 'total floor area', "
+            "'property type', 'current energy score','potential energy score', 'current co2 emission', potential co2 emission' and 'date of certificate'. "
+            "Also extract a summary of the 'energy saving' information."
         ),  # Instructions for the LLM
         "input_format": "markdown",  # Format of the input content
         "verbose": True,  # Enable verbose logging
